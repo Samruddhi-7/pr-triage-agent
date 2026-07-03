@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SQLite databases
+*.db
+
+# Test results
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Project specific
+pr_triage_agent/results/*
+!pr_triage_agent/results/.gitkeep
+pr_triage_agent/assets/*
+!pr_triage_agent/assets/.gitkeep
