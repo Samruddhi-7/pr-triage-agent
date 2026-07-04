@@ -1,4 +1,3 @@
-import json
 import time
 from unittest.mock import MagicMock, patch
 
@@ -8,7 +7,6 @@ from pr_triage_agent.llm.groq_client import (
     GroqClient,
     RateLimiter,
     MAX_RETRIES,
-    BASE_BACKOFF_SECONDS,
     _convert_tools,
     _to_openai_messages,
 )
