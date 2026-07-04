@@ -94,7 +94,7 @@ def cmd_review(args: argparse.Namespace) -> None:
     agent = AgentLoop(gemini, toolset, pr_fetcher, reflection)
 
     start = time.time()
-    with console.status("[bold yellow]Analyzing PR...") as status:
+    with console.status("[bold yellow]Analyzing PR..."):
         state = agent.run(
             pr_url=args.pr_url,
             repo_path=args.repo_path,
@@ -196,7 +196,7 @@ def cmd_eval(args: argparse.Namespace) -> None:
         limit=args.limit,
     )
 
-    with console.status("[bold yellow]Evaluating...") as status:
+    with console.status("[bold yellow]Evaluating..."):
         harness.run()
 
     for r in harness.results:

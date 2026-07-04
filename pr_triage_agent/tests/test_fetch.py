@@ -3,10 +3,7 @@ from pathlib import Path
 import pytest
 
 from pr_triage_agent.github.fetch import (
-    DiffFile,
-    DiffLine,
     FileStatus,
-    Hunk,
     LineType,
     PRFetcher,
     parse_diff,

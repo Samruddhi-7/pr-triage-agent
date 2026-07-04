@@ -1,8 +1,7 @@
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, PropertyMock
 
-import pytest
 
 from pr_triage_agent.agent.loop import AgentLoop
 from pr_triage_agent.agent.reflection import ReflectionLoop

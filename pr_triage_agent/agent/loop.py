@@ -337,7 +337,6 @@ class AgentLoop:
         ]
 
         # ── 3. Main reasoning loop ─────────────────────────────────────
-        final_text: Optional[str] = None
 
         while state.iteration_count < MAX_ITERATIONS:
             state.iteration_count += 1
@@ -405,7 +404,6 @@ class AgentLoop:
                 review_data = _try_parse_review(text)
                 if review_data:
                     _apply_review(state, review_data)
-                    final_text = text
 
                     # ── 4. Reflection step ─────────────────────────
                     if self.reflection.should_reflect(state):

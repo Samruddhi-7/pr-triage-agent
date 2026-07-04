@@ -126,13 +126,11 @@ class GeminiClient:
         return response
 
     def _call_with_retry(self, fn, *args, **kwargs) -> Optional[Any]:
-        last_exception = None
         for attempt in range(MAX_RETRIES + 1):
             try:
                 self.rate_limiter.wait()
                 return fn(*args, **kwargs)
             except RETRYABLE_EXCEPTIONS as e:
-                last_exception = e
                 if attempt == MAX_RETRIES:
                     logger.error(
                         "%s after %d retries: %s",

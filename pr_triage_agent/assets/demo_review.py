@@ -32,32 +32,32 @@ def simulate_review() -> None:
     console.print()
 
     # Step 1: Fetch PR
-    with console.status("[bold yellow]Step 1/4: Fetching PR diff...") as status:
+    with console.status("[bold yellow]Step 1/4: Fetching PR diff..."):
         time.sleep(1.2)
     console.print("  [green]OK[/] Fetched https://github.com/psf/requests/pull/6963")
     console.print("  [green]OK[/] 2 files changed (+20/-8)")
     console.print()
 
     # Step 2: Analyze
-    with console.status("[bold yellow]Step 2/4: Running linter (ruff)...") as status:
+    with console.status("[bold yellow]Step 2/4: Running linter (ruff)..."):
         time.sleep(0.8)
     console.print("  [green]OK[/] ruff: no new issues")
-    with console.status("[bold yellow]Step 2/4: Running tests (pytest)...") as status:
+    with console.status("[bold yellow]Step 2/4: Running tests (pytest)..."):
         time.sleep(1.0)
     console.print("  [green]OK[/] pytest: all tests passed")
-    with console.status("[bold yellow]Step 2/4: Running static analysis (bandit)...") as status:
+    with console.status("[bold yellow]Step 2/4: Running static analysis (bandit)..."):
         time.sleep(1.2)
     console.print("  [yellow]!![/] bandit: potential issue in auth.py (line 178)")
     console.print()
 
     # Step 3: LLM Reasoning
-    with console.status("[bold yellow]Step 3/4: Gemini LLM reasoning...") as status:
+    with console.status("[bold yellow]Step 3/4: Gemini LLM reasoning..."):
         time.sleep(2.5)
     console.print("  [green]OK[/] Analysis complete (confidence: 0.88)")
     console.print()
 
     # Step 4: Reflection check
-    with console.status("[bold yellow]Step 4/4: Reflection check...") as status:
+    with console.status("[bold yellow]Step 4/4: Reflection check..."):
         time.sleep(0.5)
     console.print("  [green]OK[/] Confidence >= 0.6, no re-query needed")
     console.print()
@@ -132,7 +132,7 @@ def simulate_review() -> None:
         box=box.ROUNDED,
     ))
 
-    console.print(f"\n[dim]Completed in 6.8s -- 4 iterations[/]")
+    console.print("\n[dim]Completed in 6.8s -- 4 iterations[/]")
 
 
 if __name__ == "__main__":

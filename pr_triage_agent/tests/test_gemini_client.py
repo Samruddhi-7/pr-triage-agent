@@ -6,7 +6,6 @@ import pytest
 from pr_triage_agent.llm.gemini_client import (
     GeminiClient,
     RateLimiter,
-    REQUESTS_PER_MINUTE,
     MAX_RETRIES,
     BASE_BACKOFF_SECONDS,
 )

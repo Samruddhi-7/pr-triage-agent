@@ -1,5 +1,4 @@
 import logging
-from typing import Any, Optional
 
 from pr_triage_agent.agent.state import AgentState
 

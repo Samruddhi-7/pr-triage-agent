@@ -1,0 +1,7 @@
+exclude = [
+    "pr_triage_agent/tests/fixtures/",
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+]

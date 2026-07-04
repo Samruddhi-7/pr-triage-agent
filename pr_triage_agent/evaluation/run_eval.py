@@ -308,7 +308,6 @@ class EvaluationHarness:
         from pr_triage_agent.llm.gemini_client import GeminiClient
         from pr_triage_agent.agent.tools import ToolSet
         from pr_triage_agent.agent.loop import (
-            AgentLoop,
             _build_initial_prompt,
             _try_parse_review,
             _apply_review,
@@ -331,8 +330,6 @@ class EvaluationHarness:
 
         prompt = _build_initial_prompt(changed_files, diff_text)
         contents: list[dict] = [{"role": "user", "parts": [{"text": prompt}]}]
-
-        final_text = None
 
         while state.iteration_count < MAX_ITERATIONS:
             state.iteration_count += 1
@@ -375,7 +372,6 @@ class EvaluationHarness:
                 review_data = _try_parse_review(text)
                 if review_data:
                     _apply_review(state, review_data)
-                    final_text = text
 
                     if reflection.should_reflect(state):
                         logger.info("Reflection triggered for %s", pr_id)
