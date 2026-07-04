@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 720" width="900" height="720">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#555"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444"/>
+    </marker>
+    <linearGradient id="box-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="llm-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#dbeafe;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#bfdbfe;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="tool-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#dcfce7;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#bbf7d0;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="output-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fef3c7;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#fde68a;stop-opacity:1"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="720" fill="#f1f5f9" rx="12"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#1e293b">PR Triage Agent — Architecture</text>
+
+  <!-- ========= Phase 1: Input ========= -->
+  <rect x="30" y="60" width="840" height="120" rx="10" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="50" y="82" font-family="monospace" font-size="12" fill="#94a3b8">PHASE 1: INPUT</text>
+
+  <!-- PR URL box -->
+  <rect x="60" y="95" width="180" height="70" rx="8" fill="url(#box-grad)" stroke="#64748b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="150" y="120" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#334155">GitHub PR URL</text>
+  <text x="150" y="140" text-anchor="middle" font-family="monospace" font-size="10" fill="#64748b">or local git diff</text>
+
+  <!-- Arrow -->
+  <line x1="240" y1="130" x2="290" y2="130" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- PRFetcher -->
+  <rect x="295" y="95" width="180" height="70" rx="8" fill="url(#box-grad)" stroke="#64748b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="385" y="118" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#334155">PRFetcher</text>
+  <text x="385" y="136" text-anchor="middle" font-family="monospace" font-size="10" fill="#64748b">fetch_diff / parse_diff</text>
+  <text x="385" y="150" text-anchor="middle" font-family="monospace" font-size="10" fill="#64748b">DiffFile[Hunk[DiffLine]]</text>
+
+  <!-- Parse output -->
+  <line x1="475" y1="130" x2="525" y2="130" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Structured Diff -->
+  <rect x="530" y="95" width="200" height="70" rx="8" fill="url(#box-grad)" stroke="#64748b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="630" y="118" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#334155">Structured Diff</text>
+  <text x="630" y="136" text-anchor="middle" font-family="monospace" font-size="10" fill="#64748b">changed_files, hunks,</text>
+  <text x="630" y="150" text-anchor="middle" font-family="monospace" font-size="10" fill="#64748b">additions, deletions</text>
+
+  <!-- Arrow down to Phase 2 -->
+  <line x1="630" y1="165" x2="630" y2="210" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <line x1="150" y1="165" x2="150" y2="210" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- ========= Phase 2: Agent Loop ========= -->
+  <rect x="30" y="210" width="840" height="240" rx="10" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="50" y="232" font-family="monospace" font-size="12" fill="#3b82f6">PHASE 2: REASONING LOOP (up to 6 iterations)</text>
+
+  <!-- Build Prompt -->
+  <rect x="60" y="248" width="220" height="60" rx="8" fill="url(#llm-grad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="170" y="272" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#1e40af">Build Prompt</text>
+  <text x="170" y="290" text-anchor="middle" font-family="monospace" font-size="10" fill="#1e40af">diff + system instruction</text>
+
+  <line x1="280" y1="278" x2="330" y2="278" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- Gemini LLM -->
+  <rect x="335" y="248" width="170" height="60" rx="8" fill="url(#llm-grad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="420" y="270" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#1e40af">Gemini API</text>
+  <text x="420" y="288" text-anchor="middle" font-family="monospace" font-size="10" fill="#1e40af">gemini-2.5-flash</text>
+
+  <!-- Decision diamond: tools or review? -->
+  <line x1="505" y1="278" x2="545" y2="278" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <polygon points="570,248 620,278 570,308 520,278" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="570" y="282" text-anchor="middle" font-family="monospace" font-size="9" fill="#4338ca">Function</text>
+  <text x="570" y="294" text-anchor="middle" font-family="monospace" font-size="9" fill="#4338ca">Call?</text>
+
+  <!-- Tool call path (right) -->
+  <line x1="620" y1="278" x2="670" y2="278" stroke="#22c55e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="645" y="272" text-anchor="middle" font-family="monospace" font-size="9" fill="#22c55e">yes</text>
+
+  <!-- ToolSet box -->
+  <rect x="675" y="245" width="170" height="80" rx="8" fill="url(#tool-grad)" stroke="#22c55e" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="760" y="263" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="bold" fill="#166534">ToolSet</text>
+  <text x="760" y="280" text-anchor="middle" font-family="monospace" font-size="9" fill="#166534">run_linter (ruff)</text>
+  <text x="760" y="294" text-anchor="middle" font-family="monospace" font-size="9" fill="#166534">run_tests (pytest)</text>
+  <text x="760" y="308" text-anchor="middle" font-family="monospace" font-size="9" fill="#166534">run_static_analysis (bandit)</text>
+
+  <!-- Tool result back to prompt -->
+  <path d="M845,325 L845,400 L170,400 L170,308" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <text x="500" y="416" text-anchor="middle" font-family="monospace" font-size="9" fill="#22c55e">Tool results appended to conversation history</text>
+
+  <!-- Review output path (down) -->
+  <line x1="570" y1="308" x2="570" y2="370" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text x="558" y="345" text-anchor="middle" font-family="monospace" font-size="9" fill="#ef4444">no — emit review</text>
+
+  <!-- Reflection check -->
+  <rect x="470" y="370" width="200" height="55" rx="8" fill="url(#output-grad)" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="570" y="390" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#92400e">Reflection Check</text>
+  <text x="570" y="408" text-anchor="middle" font-family="monospace" font-size="10" fill="#92400e">confidence &lt; 0.6 ?</text>
+
+  <!-- Reflection re-query path -->
+  <line x1="470" y1="397" x2="335" y2="397" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <path d="M335,397 L335,340 L335,308" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <text x="400" y="412" text-anchor="middle" font-family="monospace" font-size="9" fill="#f59e0b">re-query with reflection prompt</text>
+
+  <!-- Final output path -->
+  <line x1="670" y1="397" x2="720" y2="397" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ========= Phase 3: Output ========= -->
+  <rect x="30" y="480" width="840" height="100" rx="10" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="50" y="502" font-family="monospace" font-size="12" fill="#64748b">PHASE 3: OUTPUT</text>
+
+  <rect x="60" y="515" width="780" height="50" rx="8" fill="url(#output-grad)" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="450" y="535" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="bold" fill="#92400e">Structured JSON Review</text>
+  <text x="450" y="553" text-anchor="middle" font-family="monospace" font-size="11" fill="#92400e">{risk_rating, confidence, summary, per_file_comments[{file, line, comment, severity}]}</text>
+
+  <!-- ========= Legend ========= -->
+  <rect x="30" y="605" width="840" height="95" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="50" y="625" font-family="system-ui" font-size="12" font-weight="bold" fill="#475569">Legend</text>
+
+  <rect x="50" y="635" width="16" height="16" rx="3" fill="url(#llm-grad)" stroke="#3b82f6" stroke-width="1"/>
+  <text x="72" y="649" font-family="system-ui" font-size="11" fill="#475569">LLM / Prompt (Gemini)</text>
+
+  <rect x="230" y="635" width="16" height="16" rx="3" fill="url(#tool-grad)" stroke="#22c55e" stroke-width="1"/>
+  <text x="252" y="649" font-family="system-ui" font-size="11" fill="#475569">Tool Execution</text>
+
+  <rect x="400" y="635" width="16" height="16" rx="3" fill="url(#output-grad)" stroke="#f59e0b" stroke-width="1"/>
+  <text x="422" y="649" font-family="system-ui" font-size="11" fill="#475569">Output / Reflection</text>
+
+  <rect x="600" y="635" width="16" height="16" rx="3" fill="url(#box-grad)" stroke="#64748b" stroke-width="1"/>
+  <text x="622" y="649" font-family="system-ui" font-size="11" fill="#475569">Data / Input</text>
+
+  <line x1="50" y1="670" x2="90" y2="670" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="100" y="674" font-family="system-ui" font-size="11" fill="#475569">Result feedback loop</text>
+
+  <line x1="300" y1="670" x2="340" y2="670" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="350" y="674" font-family="system-ui" font-size="11" fill="#475569">Forward flow</text>
+</svg>
