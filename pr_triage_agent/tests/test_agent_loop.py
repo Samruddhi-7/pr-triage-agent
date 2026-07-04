@@ -17,40 +17,37 @@ BUGGY_DIFF_PATH = FIXTURES / "buggy_pr_diff.txt"
 
 
 def _make_fc_response(name: str, args: dict):
-    fc = MagicMock()
-    fc.name = name
-    fc.args = args
+    func = MagicMock()
+    func.name = name
+    func.arguments = json.dumps(args)
 
-    part = MagicMock()
-    part.function_call = fc
-    del part.text
+    tc = MagicMock()
+    tc.id = f"call_{name}"
+    tc.type = "function"
+    tc.function = func
 
-    content = MagicMock()
-    content.parts = [part]
+    msg = MagicMock()
+    msg.content = None
+    msg.tool_calls = [tc]
 
-    candidate = MagicMock()
-    candidate.content = content
+    choice = MagicMock()
+    choice.message = msg
 
     resp = MagicMock()
-    resp.candidates = [candidate]
-    type(resp).text = PropertyMock(side_effect=ValueError("no text"))
+    resp.choices = [choice]
     return resp
 
 
 def _make_text_response(text: str):
-    part = MagicMock()
-    part.text = text
-    part.function_call = None
+    msg = MagicMock()
+    msg.content = text
+    msg.tool_calls = None
 
-    content = MagicMock()
-    content.parts = [part]
-
-    candidate = MagicMock()
-    candidate.content = content
+    choice = MagicMock()
+    choice.message = msg
 
     resp = MagicMock()
-    resp.candidates = [candidate]
-    resp.text = text
+    resp.choices = [choice]
     return resp
 
 

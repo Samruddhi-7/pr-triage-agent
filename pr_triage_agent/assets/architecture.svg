@@ -35,7 +35,7 @@
   <rect width="900" height="720" fill="#f1f5f9" rx="12"/>
 
   <!-- Title -->
-  <text x="450" y="38" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#1e293b">PR Triage Agent — Architecture</text>
+  <text x="450" y="38" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#1e293b">PR Triage Agent ï¿½ Architecture</text>
 
   <!-- ========= Phase 1: Input ========= -->
   <rect x="30" y="60" width="840" height="120" rx="10" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6,4"/>
@@ -79,10 +79,10 @@
 
   <line x1="280" y1="278" x2="330" y2="278" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
 
-  <!-- Gemini LLM -->
+  <!-- Llama LLM -->
   <rect x="335" y="248" width="170" height="60" rx="8" fill="url(#llm-grad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="420" y="270" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#1e40af">Gemini API</text>
-  <text x="420" y="288" text-anchor="middle" font-family="monospace" font-size="10" fill="#1e40af">gemini-2.5-flash</text>
+  <text x="420" y="270" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#1e40af">Groq API</text>
+  <text x="420" y="288" text-anchor="middle" font-family="monospace" font-size="10" fill="#1e40af">llama-3.3-70b</text>
 
   <!-- Decision diamond: tools or review? -->
   <line x1="505" y1="278" x2="545" y2="278" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
@@ -108,7 +108,7 @@
 
   <!-- Review output path (down) -->
   <line x1="570" y1="308" x2="570" y2="370" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-red)"/>
-  <text x="558" y="345" text-anchor="middle" font-family="monospace" font-size="9" fill="#ef4444">no — emit review</text>
+  <text x="558" y="345" text-anchor="middle" font-family="monospace" font-size="9" fill="#ef4444">no ï¿½ emit review</text>
 
   <!-- Reflection check -->
   <rect x="470" y="370" width="200" height="55" rx="8" fill="url(#output-grad)" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
@@ -136,7 +136,7 @@
   <text x="50" y="625" font-family="system-ui" font-size="12" font-weight="bold" fill="#475569">Legend</text>
 
   <rect x="50" y="635" width="16" height="16" rx="3" fill="url(#llm-grad)" stroke="#3b82f6" stroke-width="1"/>
-  <text x="72" y="649" font-family="system-ui" font-size="11" fill="#475569">LLM / Prompt (Gemini)</text>
+  <text x="72" y="649" font-family="system-ui" font-size="11" fill="#475569">LLM / Prompt (Groq / Llama)</text>
 
   <rect x="230" y="635" width="16" height="16" rx="3" fill="url(#tool-grad)" stroke="#22c55e" stroke-width="1"/>
   <text x="252" y="649" font-family="system-ui" font-size="11" fill="#475569">Tool Execution</text>

@@ -85,10 +85,10 @@ def generate_diagram(output_path: Path) -> None:
 
   <line x1="280" y1="278" x2="330" y2="278" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
 
-  <!-- Gemini LLM -->
+  <!-- Llama LLM -->
   <rect x="335" y="248" width="170" height="60" rx="8" fill="url(#llm-grad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="420" y="270" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#1e40af">Gemini API</text>
-  <text x="420" y="288" text-anchor="middle" font-family="monospace" font-size="10" fill="#1e40af">gemini-2.5-flash</text>
+  <text x="420" y="270" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="bold" fill="#1e40af">Groq API</text>
+  <text x="420" y="288" text-anchor="middle" font-family="monospace" font-size="10" fill="#1e40af">llama-3.3-70b</text>
 
   <!-- Decision diamond: tools or review? -->
   <line x1="505" y1="278" x2="545" y2="278" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
@@ -142,7 +142,7 @@ def generate_diagram(output_path: Path) -> None:
   <text x="50" y="625" font-family="system-ui" font-size="12" font-weight="bold" fill="#475569">Legend</text>
 
   <rect x="50" y="635" width="16" height="16" rx="3" fill="url(#llm-grad)" stroke="#3b82f6" stroke-width="1"/>
-  <text x="72" y="649" font-family="system-ui" font-size="11" fill="#475569">LLM / Prompt (Gemini)</text>
+  <text x="72" y="649" font-family="system-ui" font-size="11" fill="#475569">LLM / Prompt (Groq / Llama)</text>
 
   <rect x="230" y="635" width="16" height="16" rx="3" fill="url(#tool-grad)" stroke="#22c55e" stroke-width="1"/>
   <text x="252" y="649" font-family="system-ui" font-size="11" fill="#475569">Tool Execution</text>

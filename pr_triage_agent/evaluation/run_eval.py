@@ -305,7 +305,7 @@ class EvaluationHarness:
         self, entry: dict, diff_text: str, pr_id: str,
     ) -> Optional[object]:
         from pr_triage_agent.agent.state import AgentState
-        from pr_triage_agent.llm.gemini_client import GeminiClient
+        from pr_triage_agent.llm.groq_client import GroqClient
         from pr_triage_agent.agent.tools import ToolSet
         from pr_triage_agent.agent.loop import (
             _build_initial_prompt,
@@ -320,7 +320,7 @@ class EvaluationHarness:
         )
         from pr_triage_agent.agent.reflection import ReflectionLoop
 
-        gemini = GeminiClient()
+        groq = GroqClient()
         toolset = ToolSet()
         reflection = ReflectionLoop()
         state = AgentState(pr_url=entry["pr_url"])
@@ -329,40 +329,57 @@ class EvaluationHarness:
         changed_files = list(dict.fromkeys(changed_files))
 
         prompt = _build_initial_prompt(changed_files, diff_text)
-        contents: list[dict] = [{"role": "user", "parts": [{"text": prompt}]}]
+        contents: list[dict] = [{"role": "user", "content": prompt}]
+
+        _call_id_counter = 0
+
+        def _next_call_id() -> str:
+            nonlocal _call_id_counter
+            _call_id_counter += 1
+            return f"call_{_call_id_counter}"
 
         while state.iteration_count < MAX_ITERATIONS:
             state.iteration_count += 1
             logger.info("Iteration %d/%d for %s", state.iteration_count, MAX_ITERATIONS, pr_id)
 
-            response = gemini.generate_with_contents(
+            response = groq.generate_with_contents(
                 contents=contents,
                 tools=TOOL_SCHEMAS,
                 system_instruction=REVIEW_SYSTEM_INSTRUCTION,
             )
 
             if response is None:
-                state.error = "Gemini API returned no response"
+                state.error = "Groq API returned no response"
                 break
 
             fc = _get_function_call(response)
             if fc is not None:
                 result = _execute_tool_call(toolset, fc, state)
-                state.tool_results[fc.name] = result
-                state.add_trace(f"tool:{fc.name}", f"success={result.success}, output={result.output[:200]}")
+                state.tool_results[fc["name"]] = result
+                state.add_trace(f"tool:{fc['name']}", f"success={result.success}, output={result.output[:200]}")
 
                 result_text = json.dumps({
                     "success": result.success,
                     "output": result.output[:2000],
                     "error": result.error,
                 })
+                call_id = _next_call_id()
                 contents.append({
-                    "role": "model",
-                    "parts": [{"function_call": {"name": fc.name, "args": fc.args}}],
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [{
+                        "id": call_id,
+                        "type": "function",
+                        "function": {
+                            "name": fc["name"],
+                            "arguments": json.dumps(fc["args"]),
+                        },
+                    }],
                 })
                 contents.append({
-                    "role": "user",
-                    "parts": [{"function_response": {"name": fc.name, "response": {"result": result_text}}}],
+                    "role": "tool",
+                    "tool_call_id": call_id,
+                    "content": result_text,
                 })
                 continue
 
@@ -377,7 +394,7 @@ class EvaluationHarness:
                         logger.info("Reflection triggered for %s", pr_id)
                         state.reflection_triggered = True
                         reflection_prompt = reflection.build_reflection_prompt(state)
-                        contents.append({"role": "user", "parts": [{"text": reflection_prompt}]})
+                        contents.append({"role": "user", "content": reflection_prompt})
                         continue
 
                     break
@@ -385,7 +402,7 @@ class EvaluationHarness:
                 state.add_trace("parse_failed", "Could not parse JSON from response")
                 contents.append({
                     "role": "user",
-                    "parts": [{"text": "Please produce the final review as valid JSON with exactly these keys: risk_rating, confidence, summary, per_file_comments."}],
+                    "content": "Please produce the final review as valid JSON with exactly these keys: risk_rating, confidence, summary, per_file_comments.",
                 })
                 continue
 
@@ -450,6 +467,9 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+
+    from dotenv import load_dotenv
+    load_dotenv()
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

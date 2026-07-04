@@ -51,7 +51,7 @@ def simulate_review() -> None:
     console.print()
 
     # Step 3: LLM Reasoning
-    with console.status("[bold yellow]Step 3/4: Gemini LLM reasoning..."):
+    with console.status("[bold yellow]Step 3/4: LLM reasoning (Groq / Llama 3.3 70B)..."):
         time.sleep(2.5)
     console.print("  [green]OK[/] Analysis complete (confidence: 0.88)")
     console.print()

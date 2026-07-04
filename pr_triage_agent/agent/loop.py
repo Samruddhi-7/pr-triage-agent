@@ -7,7 +7,7 @@ from pr_triage_agent.agent.reflection import ReflectionLoop
 from pr_triage_agent.agent.state import AgentState
 from pr_triage_agent.agent.tools import ToolResult, ToolSet
 from pr_triage_agent.github.fetch import DiffFile, PRFetcher
-from pr_triage_agent.llm.gemini_client import GeminiClient
+from pr_triage_agent.llm.groq_client import GroqClient
 
 logger = logging.getLogger(__name__)
 
@@ -175,11 +175,11 @@ Analyze this PR using the available tools. Call the tools one at a time as neede
 
 def _execute_tool_call(
     toolset: ToolSet,
-    fc: Any,
+    fc: dict,
     state: AgentState,
 ) -> ToolResult:
-    name = fc.name
-    args = fc.args or {}
+    name = fc["name"]
+    args = fc.get("args", {})
 
     logger.info("Tool call: %s args=%s", name, args)
 
@@ -247,27 +247,30 @@ def _apply_review(state: AgentState, review_data: dict) -> None:
     state.per_file_comments = review_data.get("per_file_comments", [])
 
 
-def _get_function_call(response: Any) -> Optional[Any]:
+_call_id_counter = 0
+
+
+def _next_call_id() -> str:
+    global _call_id_counter
+    _call_id_counter += 1
+    return f"call_{_call_id_counter}"
+
+
+def _get_function_call(response: Any) -> Optional[dict]:
     try:
-        candidate = response.candidates[0]
-        part = candidate.content.parts[0]
-        if part.function_call:
-            return part.function_call
-    except (AttributeError, IndexError, KeyError):
+        message = response.choices[0].message
+        if message.tool_calls:
+            tc = message.tool_calls[0]
+            return {"name": tc.function.name, "args": json.loads(tc.function.arguments)}
+    except (AttributeError, IndexError, KeyError, json.JSONDecodeError):
         pass
     return None
 
 
 def _get_text(response: Any) -> Optional[str]:
     try:
-        return response.text
-    except (AttributeError, ValueError):
-        pass
-    try:
-        candidate = response.candidates[0]
-        part = candidate.content.parts[0]
-        return part.text
-    except (AttributeError, IndexError, KeyError):
+        return response.choices[0].message.content
+    except (AttributeError, IndexError):
         pass
     return None
 
@@ -275,12 +278,12 @@ def _get_text(response: Any) -> Optional[str]:
 class AgentLoop:
     def __init__(
         self,
-        gemini_client: GeminiClient,
+        groq_client: GroqClient,
         toolset: ToolSet,
         pr_fetcher: PRFetcher,
         reflection_loop: Optional[ReflectionLoop] = None,
     ):
-        self.gemini = gemini_client
+        self.groq = groq_client
         self.toolset = toolset
         self.pr_fetcher = pr_fetcher
         self.reflection = reflection_loop or ReflectionLoop()
@@ -333,7 +336,7 @@ class AgentLoop:
         # ── 2. Build initial prompt ────────────────────────────────────
         prompt = _build_initial_prompt(state.changed_files, state.diff)
         contents: list[dict] = [
-            {"role": "user", "parts": [{"text": prompt}]}
+            {"role": "user", "content": prompt}
         ]
 
         # ── 3. Main reasoning loop ─────────────────────────────────────
@@ -344,22 +347,22 @@ class AgentLoop:
                 "Iteration %d/%d", state.iteration_count, MAX_ITERATIONS
             )
 
-            response = self.gemini.generate_with_contents(
+            response = self.groq.generate_with_contents(
                 contents=contents,
                 tools=TOOL_SCHEMAS,
                 system_instruction=REVIEW_SYSTEM_INSTRUCTION,
             )
 
             if response is None:
-                state.error = "Gemini API returned no response"
+                state.error = "Groq API returned no response"
                 break
 
             fc = _get_function_call(response)
             if fc is not None:
                 result = _execute_tool_call(self.toolset, fc, state)
-                state.tool_results[fc.name] = result
+                state.tool_results[fc["name"]] = result
                 state.add_trace(
-                    f"tool:{fc.name}",
+                    f"tool:{fc['name']}",
                     f"success={result.success}, "
                     f"output={result.output[:200]}",
                 )
@@ -370,32 +373,24 @@ class AgentLoop:
                         "error": result.error,
                     }
                 )
-                contents.append(
-                    {
-                        "role": "model",
-                        "parts": [
-                            {
-                                "function_call": {
-                                    "name": fc.name,
-                                    "args": fc.args,
-                                }
-                            }
-                        ],
-                    }
-                )
-                contents.append(
-                    {
-                        "role": "user",
-                        "parts": [
-                            {
-                                "function_response": {
-                                    "name": fc.name,
-                                    "response": {"result": result_text},
-                                }
-                            }
-                        ],
-                    }
-                )
+                call_id = _next_call_id()
+                contents.append({
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [{
+                        "id": call_id,
+                        "type": "function",
+                        "function": {
+                            "name": fc["name"],
+                            "arguments": json.dumps(fc["args"]),
+                        },
+                    }],
+                })
+                contents.append({
+                    "role": "tool",
+                    "tool_call_id": call_id,
+                    "content": result_text,
+                })
                 continue
 
             text = _get_text(response)
@@ -416,12 +411,10 @@ class AgentLoop:
                         reflection_prompt = (
                             self.reflection.build_reflection_prompt(state)
                         )
-                        contents.append(
-                            {
-                                "role": "user",
-                                "parts": [{"text": reflection_prompt}],
-                            }
-                        )
+                        contents.append({
+                            "role": "user",
+                            "content": reflection_prompt,
+                        })
                         continue
 
                     break
@@ -430,21 +423,15 @@ class AgentLoop:
                     "parse_failed",
                     "Could not parse JSON from response",
                 )
-                contents.append(
-                    {
-                        "role": "user",
-                        "parts": [
-                            {
-                                "text": (
-                                    "Please produce the final review as "
-                                    "valid JSON with exactly these keys: "
-                                    "risk_rating, confidence, summary, "
-                                    "per_file_comments."
-                                )
-                            }
-                        ],
-                    }
-                )
+                contents.append({
+                    "role": "user",
+                    "content": (
+                        "Please produce the final review as "
+                        "valid JSON with exactly these keys: "
+                        "risk_rating, confidence, summary, "
+                        "per_file_comments."
+                    ),
+                })
                 continue
 
             state.error = "Unexpected empty response from model"

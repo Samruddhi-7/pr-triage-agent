@@ -17,7 +17,7 @@ from pr_triage_agent.agent.loop import AgentLoop
 from pr_triage_agent.agent.reflection import ReflectionLoop
 from pr_triage_agent.agent.tools import ToolSet
 from pr_triage_agent.github.fetch import PRFetcher
-from pr_triage_agent.llm.gemini_client import GeminiClient
+from pr_triage_agent.llm.groq_client import GroqClient
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -88,10 +88,10 @@ def cmd_review(args: argparse.Namespace) -> None:
     ))
 
     pr_fetcher = PRFetcher()
-    gemini = GeminiClient()
+    groq = GroqClient()
     toolset = ToolSet()
     reflection = ReflectionLoop()
-    agent = AgentLoop(gemini, toolset, pr_fetcher, reflection)
+    agent = AgentLoop(groq, toolset, pr_fetcher, reflection)
 
     start = time.time()
     with console.status("[bold yellow]Analyzing PR..."):
@@ -243,19 +243,22 @@ def cmd_init(args: argparse.Namespace) -> None:
     content = template_path.read_text()
     target_path.write_text(content)
     console.print(f"[green]Created {target_path}[/]")
-    console.print("Edit it to add your GEMINI_API_KEY (get one free at https://aistudio.google.com/apikey)")
+    console.print("Edit it to add your GROQ_API_KEY (get one free at https://console.groq.com/keys)")
 
 
 def _check_api_key() -> None:
     import os
-    if not os.environ.get("GEMINI_API_KEY"):
-        console.print("[red]Error:[/] GEMINI_API_KEY not set.")
+    if not os.environ.get("GROQ_API_KEY"):
+        console.print("[red]Error:[/] GROQ_API_KEY not set.")
         console.print("  Run [bold]pr-triage-agent init[/] to create a .env file, then add your key.")
-        console.print("  Get a free key at: https://aistudio.google.com/apikey")
+        console.print("  Get a free key at: https://console.groq.com/keys")
         sys.exit(1)
 
 
 def main() -> None:
+    from dotenv import load_dotenv
+    load_dotenv()
+
     parser = build_parser()
     args = parser.parse_args()
 
