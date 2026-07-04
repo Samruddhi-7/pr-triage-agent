@@ -27,6 +27,20 @@ MAX_RETRIES = 5
 BASE_BACKOFF_SECONDS = 1.0
 
 
+class ToolUseFailed:
+    def __init__(self, message: str = ""):
+        self.message = message
+
+
+def _get_error_code(e: Exception) -> Optional[str]:
+    body = getattr(e, "body", None)
+    if isinstance(body, dict):
+        error_info = body.get("error", {})
+        if isinstance(error_info, dict):
+            return error_info.get("code")
+    return None
+
+
 class RateLimiter:
     def __init__(self, requests_per_minute: float = REQUESTS_PER_MINUTE):
         self.min_interval = 60.0 / requests_per_minute
@@ -170,6 +184,8 @@ class GroqClient:
             model=self.model_name,
             messages=messages,
         )
+        if isinstance(response, ToolUseFailed):
+            return response
         if response is None:
             return None
         self._log_usage(response, "generate")
@@ -194,6 +210,8 @@ class GroqClient:
             messages=messages,
             tools=groq_tools if groq_tools else None,
         )
+        if isinstance(response, ToolUseFailed):
+            return response
         if response is None:
             return None
         self._log_usage(response, "generate_with_tools")
@@ -214,6 +232,8 @@ class GroqClient:
             messages=messages,
             tools=groq_tools if groq_tools else None,
         )
+        if isinstance(response, ToolUseFailed):
+            return response
         if response is None:
             return None
         self._log_usage(response, "generate_with_contents")
@@ -225,6 +245,14 @@ class GroqClient:
                 self.rate_limiter.wait()
                 return fn(*args, **kwargs)
             except Exception as e:
+                if _get_error_code(e) == "tool_use_failed":
+                    logger.warning(
+                        "Tool use failed (non-retryable): %s",
+                        e,
+                    )
+                    msg = str(getattr(e, "body", {}))
+                    return ToolUseFailed(msg)
+
                 status = getattr(e, "status_code", None) or getattr(
                     getattr(e, "response", None), "status_code", None
                 )
@@ -232,8 +260,9 @@ class GroqClient:
 
                 if not retryable or attempt == MAX_RETRIES:
                     logger.error(
-                        "%s after %d retries: %s",
+                        "%s (attempt %d/%d): %s",
                         type(e).__name__,
+                        attempt,
                         MAX_RETRIES,
                         e,
                     )
@@ -249,9 +278,6 @@ class GroqClient:
                     delay,
                 )
                 time.sleep(delay)
-            except Exception as e:
-                logger.exception("Unexpected Groq API error: %s", e)
-                return None
         return None
 
     def _log_usage(self, response: Any, endpoint: str) -> None:

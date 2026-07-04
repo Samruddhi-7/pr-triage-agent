@@ -280,3 +280,43 @@ class TestAgentLoop:
 
         assert state.risk_rating == "low"
         assert state.confidence == 0.95
+
+    def test_tool_use_failed_recovers_gracefully(self, tmp_path: Path) -> None:
+        """Agent recovers from a tool_use_failed error by sending a corrective message."""
+        repo = _build_test_repo(tmp_path)
+
+        gemini = MagicMock()
+
+        from pr_triage_agent.llm.groq_client import ToolUseFailed
+
+        tool_use_failed_result = ToolUseFailed('{"error": {"code": "tool_use_failed"}}')
+        review = {
+            "risk_rating": "low",
+            "confidence": 0.95,
+            "summary": "Fixed it.",
+            "per_file_comments": [],
+        }
+        gemini.generate_with_contents.side_effect = [
+            tool_use_failed_result,
+            _make_text_response(json.dumps(review)),
+        ]
+
+        toolset = ToolSet(timeout=30)
+        pr_fetcher = PRFetcher()
+        loop = AgentLoop(gemini, toolset, pr_fetcher)
+
+        state = loop.run(
+            pr_url="http://github.com/owner/repo/pull/1",
+            repo_path=str(repo),
+            base_ref="main",
+            head_ref="feature",
+        )
+
+        assert state.error is None, state.error
+        assert state.risk_rating == "low"
+        assert state.confidence == 0.95
+        # The tool_use_failed trace should be recorded
+        tool_failed_traces = [
+            t for t in state.reasoning_trace if t.get("step") == "tool_use_failed"
+        ]
+        assert len(tool_failed_traces) == 1

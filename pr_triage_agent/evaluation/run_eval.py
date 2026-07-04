@@ -207,14 +207,22 @@ class EvaluationHarness:
         dataset: list[dict],
         results_dir: Path,
         skip_existing: bool = True,
+        only_failed: bool = False,
+        force: bool = False,
         limit: Optional[int] = None,
     ):
         self.dataset = dataset
         self.results_dir = results_dir
         self.results_dir.mkdir(parents=True, exist_ok=True)
         self.skip_existing = skip_existing
+        self.only_failed = only_failed
+        self.force = force
         self.limit = limit
         self.results: list[EvalResult] = []
+        self._errors: list[str] = []
+
+    def _has_non_fatal_error(self, result: EvalResult) -> bool:
+        return bool(result.agent_error or result.fetch_error)
 
     def run(self) -> list[EvalResult]:
         entries = self.dataset[:self.limit] if self.limit else self.dataset
@@ -224,12 +232,30 @@ class EvaluationHarness:
             pr_id = entry["id"]
             existing_path = self.results_dir / f"{pr_id}_result.json"
 
-            if self.skip_existing and existing_path.exists():
-                logger.info("[%d/%d] %s: skipping (result exists)", idx + 1, len(entries), pr_id)
+            if existing_path.exists():
                 with open(existing_path, encoding="utf-8") as f:
                     data = json.load(f)
-                self.results.append(EvalResult(**data))
-                continue
+                existing_result = EvalResult(**data)
+                is_failed = self._has_non_fatal_error(existing_result)
+
+                if self.force:
+                    logger.info("[%d/%d] %s: --force, re-evaluating...", idx + 1, len(entries), pr_id)
+                elif self.only_failed and not is_failed:
+                    logger.info("[%d/%d] %s: already succeeded, skipping (--only-failed)", idx + 1, len(entries), pr_id)
+                    self.results.append(existing_result)
+                    continue
+                elif self.skip_existing and not is_failed:
+                    logger.info("[%d/%d] %s: valid result exists, skipping", idx + 1, len(entries), pr_id)
+                    self.results.append(existing_result)
+                    continue
+                elif self.skip_existing and is_failed:
+                    logger.info("[%d/%d] %s: result exists with error, skipping (use --only-failed to retry)", idx + 1, len(entries), pr_id)
+                    self.results.append(existing_result)
+                    continue
+            else:
+                if self.only_failed:
+                    logger.info("[%d/%d] %s: no result file, skipping (--only-failed)", idx + 1, len(entries), pr_id)
+                    continue
 
             logger.info("[%d/%d] %s: evaluating...", idx + 1, len(entries), pr_id)
             result = self._evaluate_single(entry, pr_id)
@@ -305,7 +331,7 @@ class EvaluationHarness:
         self, entry: dict, diff_text: str, pr_id: str,
     ) -> Optional[object]:
         from pr_triage_agent.agent.state import AgentState
-        from pr_triage_agent.llm.groq_client import GroqClient
+        from pr_triage_agent.llm.groq_client import GroqClient, ToolUseFailed
         from pr_triage_agent.agent.tools import ToolSet
         from pr_triage_agent.agent.loop import (
             _build_initial_prompt,
@@ -347,6 +373,17 @@ class EvaluationHarness:
                 tools=TOOL_SCHEMAS,
                 system_instruction=REVIEW_SYSTEM_INSTRUCTION,
             )
+
+            if isinstance(response, ToolUseFailed):
+                state.add_trace("tool_use_failed", response.message[:200])
+                contents.append({
+                    "role": "user",
+                    "content": (
+                        "Your previous function call could not be processed "
+                        "by the API. Please fix the arguments and retry."
+                    ),
+                })
+                continue
 
             if response is None:
                 state.error = "Groq API returned no response"
@@ -461,6 +498,18 @@ def main() -> None:
         help="Limit number of PRs to evaluate",
     )
     parser.add_argument(
+        "--only-failed",
+        action="store_true",
+        default=False,
+        help="Re-evaluate only PRs with errors in their result file",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Re-evaluate all PRs regardless of existing results",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging",
@@ -481,6 +530,8 @@ def main() -> None:
         dataset=dataset,
         results_dir=args.results_dir,
         skip_existing=args.skip_existing,
+        only_failed=args.only_failed,
+        force=args.force,
         limit=args.limit,
     )
 

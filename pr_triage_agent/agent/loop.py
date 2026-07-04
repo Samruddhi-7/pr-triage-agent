@@ -7,7 +7,7 @@ from pr_triage_agent.agent.reflection import ReflectionLoop
 from pr_triage_agent.agent.state import AgentState
 from pr_triage_agent.agent.tools import ToolResult, ToolSet
 from pr_triage_agent.github.fetch import DiffFile, PRFetcher
-from pr_triage_agent.llm.groq_client import GroqClient
+from pr_triage_agent.llm.groq_client import GroqClient, ToolUseFailed
 
 logger = logging.getLogger(__name__)
 
@@ -352,6 +352,17 @@ class AgentLoop:
                 tools=TOOL_SCHEMAS,
                 system_instruction=REVIEW_SYSTEM_INSTRUCTION,
             )
+
+            if isinstance(response, ToolUseFailed):
+                state.add_trace("tool_use_failed", response.message[:200])
+                contents.append({
+                    "role": "user",
+                    "content": (
+                        "Your previous function call could not be processed "
+                        "by the API. Please fix the arguments and retry."
+                    ),
+                })
+                continue
 
             if response is None:
                 state.error = "Groq API returned no response"

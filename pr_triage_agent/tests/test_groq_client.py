@@ -202,6 +202,50 @@ class TestGroqClient:
         assert len(backoff_sleeps) == 2
         assert backoff_sleeps[1] > backoff_sleeps[0]
 
+    @patch("pr_triage_agent.llm.groq_client.time.sleep")
+    def test_retry_on_400_tool_use_failed_returns_sentinel(
+        self, mock_sleep, mock_openai, mock_db
+    ) -> None:
+        from openai import BadRequestError
+        from pr_triage_agent.llm.groq_client import ToolUseFailed
+
+        http_response = MagicMock(status_code=400, headers={})
+        exc = BadRequestError(
+            "Error code: 400 - tool_use_failed",
+            response=http_response,
+            body={"error": {"code": "tool_use_failed", "message": "Failed to call a function"}},
+        )
+
+        mock_openai.chat.completions.create.side_effect = exc
+
+        client = GroqClient(api_key="test-key", db=mock_db)
+        result = client.generate("hello")
+
+        assert isinstance(result, ToolUseFailed)
+        assert "tool_use_failed" in result.message
+        assert mock_openai.chat.completions.create.call_count == 1
+
+    @patch("pr_triage_agent.llm.groq_client.time.sleep")
+    def test_retry_on_400_other_not_retried(
+        self, mock_sleep, mock_openai, mock_db
+    ) -> None:
+        from openai import BadRequestError
+
+        http_response = MagicMock(status_code=400, headers={})
+        exc = BadRequestError(
+            "Error code: 400 - invalid request",
+            response=http_response,
+            body={"error": {"code": "invalid_request", "message": "Bad input"}},
+        )
+
+        mock_openai.chat.completions.create.side_effect = exc
+
+        client = GroqClient(api_key="test-key", db=mock_db)
+        result = client.generate("hello")
+
+        assert result is None
+        assert mock_openai.chat.completions.create.call_count == 1
+
     def test_logs_cost_to_db(self, mock_openai, mock_db) -> None:
         mock_openai.chat.completions.create.return_value = FakeResponse()
 
