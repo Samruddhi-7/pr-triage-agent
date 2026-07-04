@@ -1,0 +1,31 @@
+--- a/src/calculator.py
++++ b/src/calculator.py
+@@ -0,0 +1,12 @@
++def divide(a, b):
++    return a / b
++
++
++def process_data(items):
++    result = 0
++    for i in range(len(items) + 1):
++        result += items[i]
++    return result
++
++
++import subprocess
++subprocess.run(["ls"], shell=True)
+--- a/tests/test_calculator.py
++++ /dev/null
+@@ -1,12 +0,0 @@
+-from src.calculator import divide
+-
+-
+-def test_divide_normal():
+-    assert divide(10, 2) == 5.0
+-
+-
+-def test_divide_by_zero():
+-    try:
+-        divide(1, 0)
+-    except ZeroDivisionError:
+-        pass

@@ -107,6 +107,24 @@ class GeminiClient:
         self._log_usage(response, "generate_with_tools")
         return response
 
+    def generate_with_contents(
+        self,
+        contents: list[dict[str, Any]],
+        tools: Optional[list[dict[str, Any]]] = None,
+        system_instruction: Optional[str] = None,
+    ) -> Optional[Any]:
+        model = self._model_for(system_instruction=system_instruction)
+        kwargs: dict[str, Any] = {}
+        if tools:
+            kwargs["tools"] = tools
+        response = self._call_with_retry(
+            model.generate_content, contents, **kwargs
+        )
+        if response is None:
+            return None
+        self._log_usage(response, "generate_with_contents")
+        return response
+
     def _call_with_retry(self, fn, *args, **kwargs) -> Optional[Any]:
         last_exception = None
         for attempt in range(MAX_RETRIES + 1):
