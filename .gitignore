@@ -35,5 +35,7 @@ htmlcov/
 # Project specific
 pr_triage_agent/results/*
 !pr_triage_agent/results/.gitkeep
+pr_triage_agent/evaluation/results/*
+!pr_triage_agent/evaluation/results/.gitkeep
 pr_triage_agent/assets/*
 !pr_triage_agent/assets/.gitkeep
