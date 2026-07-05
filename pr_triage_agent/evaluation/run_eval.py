@@ -248,10 +248,6 @@ class EvaluationHarness:
                     logger.info("[%d/%d] %s: valid result exists, skipping", idx + 1, len(entries), pr_id)
                     self.results.append(existing_result)
                     continue
-                elif self.skip_existing and is_failed:
-                    logger.info("[%d/%d] %s: result exists with error, skipping (use --only-failed to retry)", idx + 1, len(entries), pr_id)
-                    self.results.append(existing_result)
-                    continue
             else:
                 if self.only_failed:
                     logger.info("[%d/%d] %s: no result file, skipping (--only-failed)", idx + 1, len(entries), pr_id)

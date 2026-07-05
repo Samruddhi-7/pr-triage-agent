@@ -244,6 +244,80 @@ class TestBuildResultsTable:
         assert "t" in content
 
 
+class TestEvaluationHarness:
+    def test_stale_err_result_is_re_evaluated(self, tmp_path, monkeypatch):
+        results_dir = tmp_path / "results"
+        results_dir.mkdir()
+        err_result = {
+            "pr_id": "err-pr", "title": "Err", "repo": "r", "pr_number": 1,
+            "ground_truth_count": 1, "true_positives": [], "false_positives": [],
+            "false_negatives": [{"file": "a.py", "severity": "high", "description": "x"}],
+            "agent_risk_rating": None, "agent_confidence": None,
+            "agent_error": "Groq API returned no response",
+            "agent_iterations": 1, "agent_reflection_used": False,
+            "fetch_error": None, "runtime_seconds": 5.0,
+        }
+        (results_dir / "err-pr_result.json").write_text(json.dumps(err_result))
+
+        dataset = [{
+            "id": "err-pr", "title": "Err", "repo": "r", "pr_number": 1,
+            "pr_url": "https://github.com/r/r/pull/1",
+            "ground_truth_issues": [{"file": "a.py", "severity": "high", "description": "x"}],
+        }]
+        from pr_triage_agent.evaluation.run_eval import EvaluationHarness, EvalResult
+
+        evaluated = []
+        def fake_evaluate(entry, pr_id):
+            evaluated.append(pr_id)
+            return EvalResult(
+                pr_id=pr_id, title=entry.get("title", ""),
+                repo=entry.get("repo", ""), pr_number=entry.get("pr_number", 0),
+                ground_truth_count=len(entry.get("ground_truth_issues", [])),
+            )
+
+        harness = EvaluationHarness(dataset, results_dir, skip_existing=True)
+        monkeypatch.setattr(harness, "_evaluate_single", fake_evaluate)
+
+        harness.run()
+        assert "err-pr" in evaluated, "ERR result should trigger re-evaluation, not skip"
+
+    def test_successful_result_is_skipped(self, tmp_path, monkeypatch):
+        results_dir = tmp_path / "results2"
+        results_dir.mkdir()
+        ok_result = {
+            "pr_id": "ok-pr", "title": "Ok", "repo": "r", "pr_number": 2,
+            "ground_truth_count": 1, "true_positives": [{"file": "a.py"}],
+            "false_positives": [], "false_negatives": [],
+            "agent_risk_rating": "low", "agent_confidence": 0.8,
+            "agent_error": None, "agent_iterations": 3,
+            "agent_reflection_used": False, "fetch_error": None,
+            "runtime_seconds": 10.0,
+        }
+        (results_dir / "ok-pr_result.json").write_text(json.dumps(ok_result))
+
+        dataset = [{
+            "id": "ok-pr", "title": "Ok", "repo": "r", "pr_number": 2,
+            "pr_url": "https://github.com/r/r/pull/2",
+            "ground_truth_issues": [{"file": "a.py", "severity": "low", "description": "y"}],
+        }]
+        from pr_triage_agent.evaluation.run_eval import EvaluationHarness, EvalResult
+
+        evaluated = []
+        def fake_evaluate(entry, pr_id):
+            evaluated.append(pr_id)
+            return EvalResult(
+                pr_id=pr_id, title=entry.get("title", ""),
+                repo=entry.get("repo", ""), pr_number=entry.get("pr_number", 0),
+                ground_truth_count=len(entry.get("ground_truth_issues", [])),
+            )
+
+        harness = EvaluationHarness(dataset, results_dir, skip_existing=True)
+        monkeypatch.setattr(harness, "_evaluate_single", fake_evaluate)
+
+        harness.run()
+        assert "ok-pr" not in evaluated, "Successful result should be skipped"
+
+
 class TestLoadDataset:
     def test_load_valid(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
